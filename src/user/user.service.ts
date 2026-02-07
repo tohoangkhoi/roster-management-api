@@ -1,8 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { USER_REPOSITORY } from './constants';
 import { FindOneOptions, Repository } from 'typeorm';
 import { User } from './user.entity';
-import { CreateUserDTO } from './dto/createUser.dto';
+import { RegisterUserDTO } from './dto/createUser.dto';
+import { USER_EXEPTION } from 'src/constants/errors/user';
 
 @Injectable()
 export class UserService {
@@ -35,7 +43,15 @@ export class UserService {
     return user;
   }
 
-  async creatUser(body: CreateUserDTO): Promise<User> {
+  async registerUser(body: RegisterUserDTO): Promise<User> {
+    const { email } = body || {};
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new BadRequestException(USER_EXEPTION.DUPLICATED_USER.message);
+    }
+
     const user = this.userRepository.create(body);
     return this.userRepository.save(user);
   }

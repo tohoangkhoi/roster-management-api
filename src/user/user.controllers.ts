@@ -1,7 +1,15 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  ValidationPipe,
+} from '@nestjs/common';
 import { User } from './user.entity';
 import { UserService } from './user.service';
-import type { CreateUserDTO } from './dto/createUser.dto';
+import { RegisterUserDTO } from './dto/createUser.dto';
 
 @Controller('users')
 export class UserControllers {
@@ -23,7 +31,7 @@ export class UserControllers {
   }
 
   @Post()
-  async createUser(@Body() body: CreateUserDTO): Promise<User> {
-    return this.userService.creatUser(body);
+  async register(@Body() body: RegisterUserDTO): Promise<User> {
+    return this.userService.registerUser(body);
   }
 }
