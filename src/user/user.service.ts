@@ -1,16 +1,11 @@
-import {
-  BadRequestException,
-  HttpCode,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { USER_REPOSITORY } from './constants';
-import { FindOneOptions, Repository } from 'typeorm';
+import { FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { User } from './user.entity';
-import { RegisterUserDTO } from './dto/createUser.dto';
+import { RegisterUserDTO } from './dto/register-user.dto';
 import { USER_EXEPTION } from 'src/constants/errors/user';
+import { hashPassword } from './utils/user.utils';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -30,29 +25,52 @@ export class UserService {
     return { users, total };
   }
 
-  async findOne(where: FindOneOptions<User>): Promise<User> {
+  async findOne(where: FindOptionsWhere<User>): Promise<User | null> {
     if (!where) {
       throw new Error('Missing where parameters');
     }
 
-    const user = await this.userRepository.findOne(where);
-    if (!user) {
-      throw new Error('User does not exist');
-    }
+    const user = await this.userRepository.findOne({ where });
 
     return user;
   }
 
+  async findById(id: number): Promise<User | null> {
+    const user = await this.findOne({ id });
+    if (!user) {
+      throw new BadRequestException(USER_EXEPTION.USER_NOT_FOUND.message);
+    } else {
+      return user;
+    }
+  }
+
   async registerUser(body: RegisterUserDTO): Promise<User> {
-    const { email } = body || {};
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
-    });
+    const { email, password } = body || {};
+    const existingUser = await this.findOne({ email });
     if (existingUser) {
       throw new BadRequestException(USER_EXEPTION.DUPLICATED_USER.message);
     }
 
-    const user = this.userRepository.create(body);
+    const hashedPassword = await hashPassword(password);
+
+    const user = this.userRepository.create({
+      email,
+      password: hashedPassword,
+    });
     return this.userRepository.save(user);
+  }
+
+  async blockUser(userId: number, blocked: boolean) {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new BadRequestException(USER_EXEPTION.USER_NOT_FOUND.message);
+    }
+    const updatedResult = await this.userRepository.update(userId, { blocked });
+
+    if (updatedResult.affected !== 1) {
+      throw new BadRequestException(USER_EXEPTION.UPDATE_FAILED.message);
+    }
+
+    return true;
   }
 }

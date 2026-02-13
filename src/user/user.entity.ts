@@ -16,4 +16,10 @@ export class User {
 
   @Column({ length: 500, nullable: true })
   lastName: string;
+
+  @Column({ default: false })
+  blocked: boolean;
+
+  @Column({ default: false })
+  archived: boolean;
 }
