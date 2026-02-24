@@ -1,17 +1,25 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY } from './constants';
-import { FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { RegisterUserDTO } from './dto/register-user.dto';
 import { USER_EXEPTION } from 'src/constants/errors/user';
 import { hashPassword } from './utils/user.utils';
-import * as bcrypt from 'bcrypt';
+import { USER_REPOSITORY } from './constants/user-providers.constants';
+import { UserRolesService } from 'src/user-roles/user-roles.service';
+import { RoleService } from 'src/role/role.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @Inject(USER_REPOSITORY)
     private userRepository: Repository<User>,
+    private roleService: RoleService,
+    private userRoleService: UserRolesService,
   ) {}
 
   async findAll(
@@ -72,5 +80,19 @@ export class UserService {
     }
 
     return true;
+  }
+
+  async assignRole(userId: number, roleId: number) {
+    const user = await this.findOne({ id: userId });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const role = await this.roleService.findOne({ id: roleId });
+
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    await this.userRoleService.create(userId, roleId);
   }
 }

@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { USER_REPOSITORY } from './constants';
 import { User } from './user.entity';
 import { DATA_SOURCE } from 'src/database/constants';
 import { Provider } from '@nestjs/common';
+import { USER_REPOSITORY } from './constants/user-providers.constants';
 
 export const userProviders: Provider[] = [
   {

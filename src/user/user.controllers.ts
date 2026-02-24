@@ -1,18 +1,12 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 import { RegisterUserDTO } from './dto/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { BlockUserDTO } from 'src/auth/dto/manage-user.dto';
 import { Roles } from 'src/decorators/roles.decorator';
+import { ROLE_INFORMATION } from 'src/role/constants/roles.constants';
+import { AssignRoleDTO } from 'src/auth/dto/assign-role.dto';
 
 @Controller('users')
 export class UserControllers {
@@ -39,9 +33,15 @@ export class UserControllers {
     return this.userService.registerUser(body);
   }
 
-  @Roles(['admin'])
+  @Roles([ROLE_INFORMATION.ADMIN.value])
   @Post('/block')
   async blockUser(@Body() body: BlockUserDTO) {
     return this.userService.blockUser(body.id, body.blocked);
+  }
+
+  @Roles([ROLE_INFORMATION.ADMIN.value])
+  @Post('/assignRole')
+  async assignRole(@Body() body: AssignRoleDTO) {
+    return this.userService.assignRole(body.userId, body.roleId);
   }
 }
