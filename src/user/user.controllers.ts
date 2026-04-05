@@ -5,8 +5,8 @@ import { RegisterUserDTO } from './dto/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { BlockUserDTO } from 'src/auth/dto/manage-user.dto';
 import { Roles } from 'src/decorators/roles.decorator';
-import { ROLE_INFORMATION } from 'src/role/constants/roles.constants';
 import { AssignRoleDTO } from 'src/auth/dto/assign-role.dto';
+import { ROLE_INFORMATION } from 'src/user-roles/constants/user-roles-providers.constants';
 
 @Controller('users')
 export class UserControllers {
@@ -42,6 +42,6 @@ export class UserControllers {
   @Roles([ROLE_INFORMATION.ADMIN.value])
   @Post('/assignRole')
   async assignRole(@Body() body: AssignRoleDTO) {
-    return this.userService.assignRole(body.userId, body.roleId);
+    return this.userService.assignRole(body.userId, body.roleName);
   }
 }
