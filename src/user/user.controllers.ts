@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 import { RegisterUserDTO } from './dto/register-user.dto';
@@ -42,6 +34,6 @@ export class UserControllers {
   @Roles(['admin'])
   @Post('/block')
   async blockUser(@Body() body: BlockUserDTO) {
-    return this.userService.blockUser(body.id, body.blocked);
+    return await this.userService.blockUser(body.id, body.blocked);
   }
 }

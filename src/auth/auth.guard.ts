@@ -3,7 +3,6 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
@@ -11,6 +10,7 @@ import { AUTH_ERROR } from './constants/auth.errors';
 import { Reflector } from '@nestjs/core';
 import { Roles } from '../decorators/roles.decorator';
 import { IS_PUBLIC_KEY } from 'src/decorators/public-routes.decorator';
+import { JwtTokenPayload } from './constants/auth.tokens';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -28,7 +28,7 @@ export class AuthGuard implements CanActivate {
     return isPublic;
   }
 
-  private async hasValidRoles(context: ExecutionContext): Promise<boolean> {
+  private hasValidRoles(context: ExecutionContext): boolean {
     const roles = this.reflector.get(Roles, context.getHandler());
 
     if (!roles?.length) {
@@ -49,8 +49,7 @@ export class AuthGuard implements CanActivate {
       if (!token) {
         throw new UnauthorizedException(AUTH_ERROR.INVALID_TOKEN.message);
       }
-
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<JwtTokenPayload>(token);
       return payload;
     } catch (error) {
       console.error(error);
@@ -68,7 +67,8 @@ export class AuthGuard implements CanActivate {
         console.error('Invalid user role');
         return false;
       }
-      const request = context.switchToHttp().getRequest();
+
+      const request = context.switchToHttp().getRequest<Request>();
       const payload = await this.verifyAndExtractJwtToken(request);
       request['user'] = payload;
 
