@@ -1,17 +1,24 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY } from './constants';
-import { FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { RegisterUserDTO } from './dto/register-user.dto';
 import { USER_EXEPTION } from 'src/constants/errors/user';
 import { hashPassword } from './utils/user.utils';
-import * as bcrypt from 'bcrypt';
+import { USER_REPOSITORY } from './constants/user-providers.constants';
+import { UserRolesService } from 'src/user-roles/user-roles.service';
+import { RoleValue } from 'src/user-roles/constants/user-roles-providers.constants';
 
 @Injectable()
 export class UserService {
   constructor(
     @Inject(USER_REPOSITORY)
     private userRepository: Repository<User>,
+    private userRoleService: UserRolesService,
   ) {}
 
   async findAll(
@@ -45,7 +52,7 @@ export class UserService {
   }
 
   async registerUser(body: RegisterUserDTO): Promise<User> {
-    const { email, password } = body || {};
+    const { email, password, roleName } = body || {};
     const existingUser = await this.findOne({ email });
     if (existingUser) {
       throw new BadRequestException(USER_EXEPTION.DUPLICATED_USER.message);
@@ -57,7 +64,12 @@ export class UserService {
       email,
       password: hashedPassword,
     });
-    return this.userRepository.save(user);
+
+    await this.userRepository.save(user);
+    if (roleName) {
+      await this.assignRole(user.id, roleName);
+    }
+    return user;
   }
 
   async blockUser(userId: number, blocked: boolean) {
@@ -72,5 +84,14 @@ export class UserService {
     }
 
     return true;
+  }
+
+  async assignRole(userId: number, roleName: RoleValue) {
+    const user = await this.findOne({ id: userId });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userRoleService.create(userId, roleName);
   }
 }

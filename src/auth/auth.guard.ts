@@ -28,14 +28,16 @@ export class AuthGuard implements CanActivate {
     return isPublic;
   }
 
-  private hasValidRoles(context: ExecutionContext): boolean {
-    const roles = this.reflector.get(Roles, context.getHandler());
+  private async hasValidRoles(context: ExecutionContext): Promise<boolean> {
+    const requiredRoles = this.reflector.get(Roles, context.getHandler());
 
-    if (!roles?.length) {
+    if (!requiredRoles?.length) {
       return true;
     }
     //TODO: TBC after implement role entity
-    return true;
+    const { user } = context.switchToHttp().getRequest<Request>();
+
+    return requiredRoles.some((role) => user?.userRoles?.includes(role));
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
