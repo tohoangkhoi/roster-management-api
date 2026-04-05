@@ -16,7 +16,7 @@ export class RegisterUserDTO {
 
   @IsString()
   @IsOptional()
-  password: string;
+  password?: string;
 
   @IsIn(ROLE_VALUES)
   @IsOptional()

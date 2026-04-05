@@ -1,7 +1,10 @@
 import { JwtService } from '@nestjs/jwt';
 import {
+  BadRequestException,
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,12 +14,16 @@ import { Reflector } from '@nestjs/core';
 import { Roles } from '../decorators/roles.decorator';
 import { IS_PUBLIC_KEY } from 'src/decorators/public-routes.decorator';
 import { JwtTokenPayload } from './constants/auth.tokens';
+import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/user.entity';
+import { RoleValue } from 'src/user-roles/constants/user-roles-providers.constants';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
+    private userService: UserService,
   ) {}
 
   private isPublicRoute(context: ExecutionContext): boolean {
@@ -28,16 +35,19 @@ export class AuthGuard implements CanActivate {
     return isPublic;
   }
 
-  private async hasValidRoles(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.get(Roles, context.getHandler());
+  private hasValidRoles(context: ExecutionContext, user: User): boolean {
+    const requiredRoles = this.reflector.get<RoleValue[]>(
+      Roles,
+      context.getHandler(),
+    );
 
     if (!requiredRoles?.length) {
       return true;
     }
-    //TODO: TBC after implement role entity
-    const { user } = context.switchToHttp().getRequest<Request>();
 
-    return requiredRoles.some((role) => user?.userRoles?.includes(role));
+    return requiredRoles.some((role) => {
+      return user?.userRoles?.map((role) => role.value).includes(role);
+    });
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
@@ -65,15 +75,20 @@ export class AuthGuard implements CanActivate {
         return true;
       }
 
-      if (!this.hasValidRoles(context)) {
-        console.error('Invalid user role');
-        return false;
+      const request = context.switchToHttp().getRequest<Request>();
+      const { email } = await this.verifyAndExtractJwtToken(request);
+      const user = await this.userService.findOne({ email });
+
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND, {
+          cause: email,
+        });
       }
 
-      const request = context.switchToHttp().getRequest<Request>();
-      const payload = await this.verifyAndExtractJwtToken(request);
-      request['user'] = payload;
-
+      if (!this.hasValidRoles(context, user)) {
+        throw new UnauthorizedException('Invalid user roles.');
+      }
+      request['user'] = user;
       return true;
     } catch (error) {
       console.error(error);

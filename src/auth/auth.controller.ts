@@ -2,6 +2,9 @@ import { Body, Controller, Get, Post, Request } from '@nestjs/common';
 import { LoginDTO } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { Public } from 'src/decorators/public-routes.decorator';
+import { omit } from 'lodash';
+import type { CustomResquest } from 'src/constants';
+import type { UserResponse } from 'src/user/constants/user.constants';
 
 @Controller('auth')
 export class AuthController {
@@ -14,7 +17,7 @@ export class AuthController {
   }
 
   @Get('profile')
-  async getProfile(@Request() req) {
-    return req.user;
+  getProfile(@Request() req: CustomResquest): UserResponse {
+    return omit(req.user, ['password']);
   }
 }

@@ -12,6 +12,8 @@ import { hashPassword } from './utils/user.utils';
 import { USER_REPOSITORY } from './constants/user-providers.constants';
 import { UserRolesService } from 'src/user-roles/user-roles.service';
 import { RoleValue } from 'src/user-roles/constants/user-roles-providers.constants';
+import { omit } from 'lodash';
+import { UserResponse } from './constants/user.constants';
 
 @Injectable()
 export class UserService {
@@ -51,14 +53,14 @@ export class UserService {
     }
   }
 
-  async registerUser(body: RegisterUserDTO): Promise<User> {
+  async registerUser(body: RegisterUserDTO): Promise<UserResponse> {
     const { email, password, roleName } = body || {};
     const existingUser = await this.findOne({ email });
     if (existingUser) {
       throw new BadRequestException(USER_EXEPTION.DUPLICATED_USER.message);
     }
 
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(password as string);
 
     const user = this.userRepository.create({
       email,
@@ -69,7 +71,8 @@ export class UserService {
     if (roleName) {
       await this.assignRole(user.id, roleName);
     }
-    return user;
+
+    return omit(user, ['password']);
   }
 
   async blockUser(userId: number, blocked: boolean) {

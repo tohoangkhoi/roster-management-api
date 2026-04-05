@@ -7,6 +7,8 @@ import { BlockUserDTO } from 'src/auth/dto/manage-user.dto';
 import { Roles } from 'src/decorators/roles.decorator';
 import { AssignRoleDTO } from 'src/auth/dto/assign-role.dto';
 import { ROLE_INFORMATION } from 'src/user-roles/constants/user-roles-providers.constants';
+import { Public } from 'src/decorators/public-routes.decorator';
+import { UserResponse } from './constants/user.constants';
 
 @Controller('users')
 export class UserControllers {
@@ -27,9 +29,10 @@ export class UserControllers {
     return this.userService.findOne({ id });
   }
 
+  @Public()
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post()
-  async register(@Body() body: RegisterUserDTO): Promise<User> {
+  async register(@Body() body: RegisterUserDTO): Promise<UserResponse> {
     return this.userService.registerUser(body);
   }
 
@@ -44,4 +47,7 @@ export class UserControllers {
   async assignRole(@Body() body: AssignRoleDTO) {
     return this.userService.assignRole(body.userId, body.roleName);
   }
+
+  @Post('/resetPassword')
+  async resetPassword() {}
 }
