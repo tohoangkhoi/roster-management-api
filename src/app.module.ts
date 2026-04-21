@@ -5,12 +5,14 @@ import { DatabaseModule } from './database/database.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { UserRolesModule } from './user-roles/user-roles.module';
-import { SessionModule } from './session/session.module';
+import { RedisModule } from './redis/redis.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
+    RedisModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -20,7 +22,7 @@ import { SessionModule } from './session/session.module';
     UserModule,
     AuthModule,
     UserRolesModule,
-    SessionModule,
+    LoggerModule,
   ],
 })
 export class AppModule {}

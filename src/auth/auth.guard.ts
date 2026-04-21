@@ -1,6 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   HttpException,

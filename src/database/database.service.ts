@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { DATA_SOURCE } from './constants';
 
-export const DatabaseProvider: Provider = {
+export const DatabaseService: Provider = {
   provide: DATA_SOURCE,
   inject: [ConfigService],
   useFactory: async (configService: ConfigService) => {
